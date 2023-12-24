@@ -2,7 +2,7 @@ import os
 
 import polib
 
-splitter_str = "*" * 15
+splitter_str = "*" * 25
 
 
 def run():
@@ -48,7 +48,7 @@ def _list_current_file(root_dir: str, dir_list: list[str]):
 def _notify_modification(msgid: str, old_str: str, new_str: str):
     print("")
     print(splitter_str)
-    print(f"修改{msgid}键：")
+    print(f"修改“{msgid}”键：")
     print(old_str)
     print(">>>")
     print(new_str)
@@ -59,7 +59,7 @@ def _notify_modification(msgid: str, old_str: str, new_str: str):
 def _notify_modification_plural(msgid: str, old_strs: list[str], new_strs: list[str]):
     print("")
     print(splitter_str)
-    print(f"修改{msgid}键：")
+    print(f"修改“{msgid}”键：")
     for o in old_strs:
         print(o)
     print(">>>")
@@ -77,15 +77,21 @@ def _process_modification_file(source_po, translated_path: str):
     translation_dict_singular = {entry.msgid: entry.msgstr for entry in translated}
     translation_dict_plural: dict[str, list[str]] = {entry.msgid_plural: entry.msgstr_plural for entry in
                                                      translated}
+    singular_empty = len(translation_dict_singular) == 0
+    plural_empty = len(translation_dict_plural) == 0
     for entry in source_po:
-        if entry.msgid and entry.msgid in translation_dict_singular:
+        if not singular_empty and entry.msgid and entry.msgid in translation_dict_singular:
             old_str = entry.msgstr
             entry.msgstr = translation_dict_singular[entry.msgid]
             _notify_modification(entry.msgid, old_str, entry.msgstr)
-        if entry.msgid_plural and entry.msgid_plural in translation_dict_plural:
+            del translation_dict_singular[entry.msgid]
+            singular_empty = len(translation_dict_singular) == 0
+        if not plural_empty and entry.msgid_plural and entry.msgid_plural in translation_dict_plural:
             old_strs = entry.msgstr_plural.copy()
             entry.msgstr_plural = translation_dict_plural.get(entry.msgid_plural)
             _notify_modification_plural(entry.msgstr_plural, old_strs, entry.msgstr_plural)
+            del translation_dict_plural[entry.msgid_plural]
+            plural_empty = len(translation_dict_plural) == 0
 
 
 try:
