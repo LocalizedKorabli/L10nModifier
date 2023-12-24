@@ -29,6 +29,7 @@ def run():
             _process_modification_file(source_mo, path)
         except Exception as ex:
             print(f"应用修改文件“{path}”时发生异常！异常信息：{ex}")
+    print("修改完成，正在保存……")
 
     if not os.path.exists('l10n_modifier_output'):
         os.mkdir('l10n_modifier_output')
@@ -74,24 +75,24 @@ def _process_modification_file(source_po, translated_path: str):
         translated = polib.pofile(translated_path)
     else:
         translated = polib.mofile(translated_path)
-    translation_dict_singular = {entry.msgid: entry.msgstr for entry in translated}
+    translation_dict_singular = {entry.msgid: entry.msgstr for entry in translated if entry.msgid != ""}
     translation_dict_plural: dict[str, list[str]] = {entry.msgid_plural: entry.msgstr_plural for entry in
-                                                     translated}
-    singular_empty = len(translation_dict_singular) == 0
-    plural_empty = len(translation_dict_plural) == 0
+                                                     translated if entry.msgid_plural != ""}
+    singular_count = len(translation_dict_singular)
+    plural_count = len(translation_dict_singular)
     for entry in source_po:
-        if not singular_empty and entry.msgid and entry.msgid in translation_dict_singular:
+        if singular_count != 0 and entry.msgid and entry.msgid in translation_dict_singular:
             old_str = entry.msgstr
             entry.msgstr = translation_dict_singular[entry.msgid]
             _notify_modification(entry.msgid, old_str, entry.msgstr)
             del translation_dict_singular[entry.msgid]
-            singular_empty = len(translation_dict_singular) == 0
-        if not plural_empty and entry.msgid_plural and entry.msgid_plural in translation_dict_plural:
+            singular_count -= 1
+        if plural_count != 0 and entry.msgid_plural and entry.msgid_plural in translation_dict_plural:
             old_strs = entry.msgstr_plural.copy()
             entry.msgstr_plural = translation_dict_plural.get(entry.msgid_plural)
             _notify_modification_plural(entry.msgstr_plural, old_strs, entry.msgstr_plural)
             del translation_dict_plural[entry.msgid_plural]
-            plural_empty = len(translation_dict_plural) == 0
+            plural_count -= 1
 
 
 try:
